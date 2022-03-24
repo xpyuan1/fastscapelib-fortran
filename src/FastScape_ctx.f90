@@ -800,7 +800,7 @@ module FastScapeContext
       fields=0.d0
 
       !call Strati (b, Fmix, nx, ny, xl, yl, reflector, nreflector, ireflector, 0, &
-      !fields, nfield, vexref, dt*nfreqref, stack, rec, length, sealevel, ffoldername, kk, iistep)
+      !fields, nfield, vexref, dt*nfreqref, stack, rec, length, sealevel)
 
       runStrati = .true.
 
