@@ -31,7 +31,7 @@ subroutine VTK_strati (h,name,nf,f,fname,nx,ny,dx,dy,istep,vex,ffoldername,kk,ii
     !  enddo
 
 !#ifdef ON_WINDOWS
-    call system ('mkdir -p '//trim(ffoldername)//'/VTK_strat')
+    !call system ('mkdir -p '//trim(ffoldername)//'/VTK_strat')
 !#else
 !    call system ("mkdir -p VTK")
 !#endif
