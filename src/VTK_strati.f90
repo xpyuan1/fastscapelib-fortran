@@ -36,6 +36,8 @@ subroutine VTK_strati (h,name,nf,f,fname,nx,ny,dx,dy,istep,vex,ffoldername,kk,ii
 !    call system ("mkdir -p VTK")
 !#endif
 
+    write (*,*) 'Name vtk stratigrapy: ',ffoldername
+
     nn=nx*ny
     write (nxc,'(i6)') nx
     write (nyc,'(i6)') ny
@@ -78,12 +80,12 @@ end subroutine VTK_strati
 
 !------------------------------------------------
 
-subroutine VTK_CUBE_strati (fields, nx, ny, nf, nreflector, xl, yl, fname, ffoldername, kk)
+subroutine VTK_CUBE_strati (fields, nx, ny, nf, nreflector, xl, yl, fname, ffoldername, kk, iistep)
 
     implicit none
 
     double precision, dimension(nx,ny,nf,nreflector) :: fields
-    integer :: nx, ny, nf, nreflector, kk
+    integer :: nx, ny, nf, nreflector, kk, iistep
     double precision :: xl, yl
     integer nheader,nfooter,npart1,npart2,nn,namel
     character header*1024,footer*1024,part1*1024,part2*1024,nxc*6,nyc*6,nnc*12,nrefc*3
@@ -92,7 +94,7 @@ subroutine VTK_CUBE_strati (fields, nx, ny, nf, nreflector, xl, yl, fname, ffold
     integer :: i, j, k
     character(len=kk), intent(in) :: ffoldername
 
-    write (*,*) 'Name vtk: ',ffoldername
+    write (*,*) 'Name vtk cube stratigraphy: ',ffoldername
 
     dx = xl/(nx - 1)
     dy = yl/(ny - 1)
