@@ -97,7 +97,7 @@
 ! as an array of dimension nn(=nx*ny)
 ! F is double precision of size nn
 
-! FastScape_Copy_Etot (etot)
+! FastScape_Copy_Total_Erosion (etot)
 ! returns the current cumulative erosion (in m)
 ! as an array of dimension nn(=nx*ny)
 ! etot is double precision of size nn
@@ -646,14 +646,15 @@ subroutine FastScape_Set_V (ux,uy)
 end subroutine FastScape_Set_V
 
 !--------------------------------------------------------------------------
-
-subroutine FastScape_Reset_Cumulative_Erosion ()
+! Xiaoping modified here to have the etot for restart of aspect, Aug 2023
+subroutine FastScape_Reset_Cumulative_Erosion (etotp)
 
   use FastScapeContext
 
   implicit none
 
-  call ResetCumulativeErosion ()
+  double precision, intent(in), dimension(*) :: etotp
+  call ResetCumulativeErosion (etotp)
 
   return
 
@@ -772,3 +773,36 @@ subroutine FastScape_Get_Fluxes (ttectonic_flux, eerosion_flux, bboundary_flux)
   return
 
 end subroutine FastScape_Get_Fluxes
+
+!--------------------------------------------------------------------------
+
+subroutine FastScape_Set_Tolerance (tol_relp, tol_absp, nGSStreamPowerLawMaxp)
+
+  use FastScapeContext
+
+  implicit none
+
+  double precision :: tol_relp, tol_absp
+  integer :: nGSStreamPowerLawMaxp
+
+  call set_tolerance (tol_relp, tol_absp, nGSStreamPowerLawMaxp)
+
+  return
+
+end subroutine FastScape_Set_Tolerance
+
+!--------------------------------------------------------------------------
+
+subroutine FastScape_Get_GSSIterations (nGSSp)
+
+  use FastScapeContext
+
+  implicit none
+
+  integer :: nGSSp
+
+  call get_nGSSiterations (nGSSp)
+
+  return
+
+end subroutine FastScape_Get_GSSIterations

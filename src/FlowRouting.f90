@@ -101,16 +101,39 @@ subroutine FlowAccumulation ()
   implicit none
 
   integer :: ij, ijk, k
-  double precision :: dx,dy
+  double precision :: dx,dy,lfpm_back
+  double precision orographicp(nx,ny),hprec(nn)
+  integer :: i,j
 
-  dx=xl/(nx-1)
-  dy=yl/(ny-1)
+! modify to have orographic effect for precipitation across the landscape
+! modify by Xioaping and Yuqiang (20230705)
+  dx = xl/(nx - 1)
+  dy = yl/(ny - 1)
+  hprec=h
+  where(hprec.lt.0.d0) hprec=0.d0  ! sea level is lowest topography for evapor
+  call lfpm (hprec/dx,nx,ny,orographicp) ! h(m) orographicp(grid/yr)
+
+! background precipitation
+  lfpm_back = 1.d-1
+
+  do j=1,ny
+    do i=1,nx
+      ij=i+(j-1)*nx
+      precip(ij)=orographicp(i,j)*dx + lfpm_back
+    enddo
+  enddo
+
+  open (20,file='precip_M.txt',status='unknown',position='append')
+  write (20,*) step,minval(precip),sum(precip)/real(nn),maxval(precip)
+  close (20)
 
   a=dx*dy*precip
+  agrid=dx*dy
   do ij=1,nn
     ijk=mstack(ij)
     do k =1,mnrec(ijk)
       a(mrec(k,ijk))=a(mrec(k,ijk))+a(ijk)*mwrec(k,ijk)
+      agrid(mrec(k,ijk))=agrid(mrec(k,ijk))+agrid(ijk)*mwrec(k,ijk)    
     enddo
   enddo
 
@@ -127,15 +150,41 @@ subroutine FlowAccumulationSingleFlowDirection ()
   implicit none
 
   integer :: ij, ijk
-  double precision :: dx,dy
+  double precision :: dx,dy,lfpm_back
+  double precision orographicp(nx,ny),hprec(nn)
+  integer :: i,j
 
-  dx=xl/(nx-1)
-  dy=yl/(ny-1)
+! modify to have orographic effect for precipitation across the landscape
+! modify by Xioaping and Yuqiang (20230705)
+  dx = xl/(nx - 1)
+  dy = yl/(ny - 1)
+  hprec=h
+  where(hprec.lt.0.d0) hprec=0.d0  ! sea level is the lowest topography for evapor
+  call lfpm (hprec/dx,nx,ny,orographicp) ! h(m) orographicp(grid/yr)
+
+! background precipitation
+  lfpm_back = 1.d-1
+
+  do j=1,ny
+    do i=1,nx
+      ij=i+(j-1)*nx
+      precip(ij)=orographicp(i,j)*dx + lfpm_back
+    enddo
+  enddo
+
+  open (20,file='precip_S.txt',status='unknown',position='append')
+  write (20,*) step,minval(precip),sum(precip)/real(nn),maxval(precip)
+  close (20)
+
+!  dx=xl/(nx-1)
+!  dy=yl/(ny-1)
 
   a=dx*dy*precip
+  agrid=dx*dy
   do ij=nn,1,-1
     ijk=stack(ij)
     a(rec(ijk))=a(rec(ijk))+a(ijk)
+    agrid(rec(ijk))=agrid(rec(ijk))+agrid(ijk)
   enddo
 
   return
@@ -170,8 +219,8 @@ subroutine find_mult_rec (h,rec0,stack0,water,rec,nrec,wrec,lrec,stack,nx,ny,dx,
   double precision h(nx*ny),wrec(8,nx*ny),lrec(8,nx*ny),dx,dy,p,water(nx*ny),p_mfd_exp(nx*ny)
   integer rec(8,nx*ny),nrec(nx*ny),stack(nx*ny),rec0(nx*ny),stack0(nx*ny)
 
-  integer :: nn,i,j,ii,jj,iii,jjj,ijk,k,ijr,nparse,nstack,ijn
-  double  precision :: slopemax,sumweight,deltah
+  integer :: nn,i,j,ii,jj,iii,jjj,ijk,k,ijr,nparse,nstack,ijn,ij
+  double precision :: slopemax,sumweight,deltah,slope
   integer, dimension(:), allocatable :: ndon,vis,parse
   integer, dimension(:,:), allocatable :: don
   double precision, dimension(:), allocatable :: h0

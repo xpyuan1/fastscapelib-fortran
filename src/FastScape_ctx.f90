@@ -14,7 +14,9 @@ module FastScapeContext
   integer :: step
   integer :: nGSStreamPowerLaw, nGSMarine
   logical :: setup_has_been_run
-  double precision, target, dimension(:), allocatable :: h,u,vx,vy,length,a,erate,etot,catch,catch0,b,precip,kf,kd
+  double precision :: tol_rel, tol_abs
+  integer :: nGSStreamPowerLawMax
+  double precision, target, dimension(:), allocatable :: h,u,vx,vy,length,a,agrid,erate,etot,catch,catch0,b,precip,kf,kd,exhum
   double precision, target, dimension(:), allocatable :: Sedflux, Fmix
   double precision, target, dimension(:), allocatable :: g
   double precision, target, dimension(:), allocatable :: p_mfd_exp
@@ -71,7 +73,7 @@ module FastScapeContext
     allocate (g(nn))
     allocate (bounds_bc(nn))
     allocate (p_mfd_exp(nn))
-    allocate (length(nn),a(nn),erate(nn),etot(nn),b(nn),Sedflux(nn),Fmix(nn),kf(nn),kd(nn))
+    allocate (length(nn),a(nn),agrid(nn),erate(nn),etot(nn),b(nn),Sedflux(nn),Fmix(nn),kf(nn),kd(nn),exhum(nn))
     allocate (lake_depth(nn),hwater(nn),mrec(8,nn),mnrec(nn),mwrec(8,nn),mlrec(8,nn),mstack(nn))
 
     h2(1:nx,1:ny) => h
@@ -89,7 +91,8 @@ module FastScapeContext
     u = 0.d0
     vx = 0.d0
     vy = 0.d0
-    etot = 0.d0
+   !etot = 0.d0
+   !exhum = 0.d0
     b = h
     precip = 1.d0
     p_mfd_exp(1:nn) = 1.d0
@@ -109,6 +112,10 @@ module FastScapeContext
     nGSMarine = 0
 
     setup_has_been_run = .true.
+
+    tol_rel = 1.d-4
+    tol_abs = 1.d-4
+    nGSStreamPowerLawMax = 100
 
     return
 
@@ -130,6 +137,7 @@ module FastScapeContext
     if (allocated(catch)) deallocate(catch)
     if (allocated(length)) deallocate (length)
     if (allocated(a)) deallocate (a)
+    if (allocated(agrid)) deallocate (agrid)
     if (allocated(b)) deallocate (b)
     if (allocated(sedflux)) deallocate (sedflux)
     if (allocated(Fmix)) deallocate (Fmix)
@@ -138,6 +146,7 @@ module FastScapeContext
     if (allocated(precip)) deallocate(precip)
     if (allocated(kd)) deallocate(kd)
     if (allocated(kf)) deallocate(kf)
+    if (allocated(exhum)) deallocate(exhum)
     if (allocated(reflector)) deallocate(reflector)
     if (allocated(fields)) deallocate(fields)
     if (allocated(lake_depth)) deallocate(lake_depth)
@@ -366,10 +375,11 @@ module FastScapeContext
   end subroutine InitF
 
   !---------------------------------------------------------------
+! Xiaoping modified here to have the etot for restart of aspect, Aug 2023
+  subroutine ResetCumulativeErosion (etotp)
 
-  subroutine ResetCumulativeErosion ()
-
-    etot = 0.d0
+    double precision, intent(in), dimension(*) :: etotp
+    etot = etotp(1:nn)
 
     return
 
@@ -650,8 +660,25 @@ module FastScapeContext
   subroutine SetPrecip (precipp)
 
     double precision, intent(in), dimension(*) :: precipp
-
+  
     precip = precipp(1:nn)
+
+  !  double precision orographicp(nx,ny)
+  !  double precision dx,dy
+  !  integer :: i,j,ij
+
+  ! modify to have orographic effect for precipitation across the landscape
+  ! modify by Xioaping and Yuqiang (20230705)
+  !  dx = xl/(nx - 1)
+  !  dy = yl/(ny - 1)
+  !  call lfpm (h/dx,nx,ny,orographicp) ! h(m) orographicp(grid/yr)
+    
+  !  do j=1,ny
+  !    do i=1,nx
+  !      ij=i+(j-1)*nx
+  !      precip(ij)=orographicp(i,j)*dx
+  !    enddo
+  !  enddo
 
     return
 
@@ -821,7 +848,7 @@ module FastScapeContext
 
       ! updates erosion below each reflector
       do i= 1, ireflector
-        fields(:,10,i) = fields(:,10,i)+max(0.,reflector(:,i)-h)
+        fields(:,10,i) = fields(:,10,i)+max(0.d0,reflector(:,i)-h)
       enddo
 
       do i = 1, ireflector - 1
@@ -887,5 +914,38 @@ module FastScapeContext
       deallocate (flux)
 
     end subroutine compute_fluxes
+
+!---------------------------------------------------------------
+
+    subroutine set_tolerance (rel, abs, nGSSmax)
+
+      ! internal routine to set the relative and aboslute tolerance and maximum
+      ! number of GSS iterations for the streamPowerLaw that includes sediment
+
+      implicit none
+
+      double precision :: rel, abs
+      integer :: nGSSmax
+
+      tol_rel = rel
+      tol_abs = abs
+      nGSStreamPowerLawMax = nGSSmax
+
+    end subroutine set_tolerance
+  
+!---------------------------------------------------------------
+
+    subroutine get_nGSSiterations (nGSS)
+
+      ! internal routine to get the number of GSS iterations for the
+      ! StreamPowerLaw computations (with sediment)
+  
+      implicit none
+  
+      integer :: nGSS
+  
+      nGSS = nGSStreamPowerLaw
+  
+    end subroutine get_nGSSiterations
 
   end module FastScapeContext
