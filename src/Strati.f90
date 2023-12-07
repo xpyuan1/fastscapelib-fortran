@@ -76,7 +76,8 @@ subroutine Strati (b,F,nx,ny,xl,yl,reflector,nreflector,ireflector,istep,fields,
   enddo
 
   call distance_to_shore (b,dist,nx,ny,rec,xl,yl)
-  call VTK_filled (b, nreflector, reflector, nfield, fields, names, nx, ny, dx, dy, istep, vex, dist)
+  call VTK_filled_strati (b, nreflector, reflector, nfield, fields, names, nx, ny, dx, dy, istep, vex, dist,&
+                         ffoldername,kk,iistep)
 
   deallocate (s,dist)
 
